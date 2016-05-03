@@ -48,6 +48,74 @@ export default class DemoPage extends React.Component {
           </div>
         </div>
 
+        <div style={ styles.column }>
+
+          <MtSvgLines
+            animate={ triggerSigAnim }
+            duration={ 2000 }
+            stagger={ 100 }
+            timing="linear"
+          >
+            <SvgSignature />
+          </MtSvgLines>
+
+          <div style={ styles.info }>
+            { this._renderTrigger( 'triggerSigAnim' ) }
+            <p style={ styles.props }>
+              duration: <strong>2000</strong><br/>
+              stagger:  <strong>100</strong><br/>
+              timing:   <strong>linear</strong>
+            </p>
+          </div>
+        </div>
+
+        <div style={ styles.column }>
+
+          <MtSvgLines
+            animate={ triggerChartAnim }
+            duration={ 4000 }
+            stagger={ 50 }
+            timing="ease-in"
+            fade={ true }
+          >
+            <SvgChart />
+          </MtSvgLines>
+
+          <div style={ styles.info }>
+            { this._renderTrigger( 'triggerChartAnim' ) }
+            <p style={ styles.props }>
+              duration: <strong>4000</strong><br/>
+              stagger:  <strong>50</strong><br/>
+              timing:   <strong>ease-in</strong><br/>
+              fade:     <strong>true</strong><br/>
+              <em>skip path</em>
+            </p>
+          </div>
+        </div>
+
+        <div style={ styles.column }>
+
+          <MtSvgLines
+            animate={ triggerSpinnerAnim }
+            duration={ 1500 }
+            stagger={ 20 }
+            timing="linear"
+            playback="2 alternate-reverse both"
+          >
+            <SvgSpinner />
+          </MtSvgLines>
+
+          <div style={ styles.info }>
+            { this._renderTrigger( 'triggerSpinnerAnim' ) }
+            <p style={ styles.props }>
+              duration: <strong>1500</strong><br/>
+              stagger:  <strong>20</strong><br/>
+              timing:   <strong>linear</strong><br/>
+              playback: <strong>2 alternate-reverse both</strong>
+            </p>
+          </div>
+        </div>
+
       </div>
     );
   }

@@ -2,8 +2,6 @@ import React, { PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
 import { shortUID, clamp, trimFloat } from './utils.js';
 
-import TWEEN from 'tween.js';
-import { VelocityComponent } from "velocity-react";
 
 export default class MtSvgLines extends React.Component {
 
@@ -46,13 +44,12 @@ export default class MtSvgLines extends React.Component {
 
     // classKey is a unique class name, used as internal anim "trigger" (re-generated each time anim is to run)
     this.state = {
-      classKey:    '',      // unique class name for the wrapper, acts as an internal "trigger"
-      css:         '',      // generated CSS
+      classKey: '',     // unique class name for the wrapper, acts as an internal "trigger"
+      css:      ''      // generated CSS
     };
 
     this._lastAnimate  = '';
     this._lastClassKey = '';
-    this._pathElems    = [];
   }
 
 
@@ -87,86 +84,18 @@ export default class MtSvgLines extends React.Component {
 
 
   componentDidMount() {
-    this._animate();
+    this._refreshCSS();
   }
 
 
   componentDidUpdate() {
-    this._animate();
+    this._refreshCSS();
   }
 
 
   // ------------------------------------------------------
 
-  _animate() {
-    // const tween = TWEEN.Tween();
-    const { isAnimating } = this.state;
 
-    if ( isAnimating ) {
-      // console.log( 'animating...' );
-      console.log( this._tweenData );
-      TWEEN.update();
-      
-    } else {
-      const pathElems   = this._getPathElems();
-      const pathLenghts = this._getPathLengths( pathElems );
-      const pathQty     = pathLenghts.length || 1;
-      const startDelay  = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-      
-      const tweenData = this._getTweenData( pathElems );
-      
-      this._tweenData = { ...tweenData.from }
-      this._tween = new TWEEN.Tween( this._tweenData ).to( tweenData.to, 1000 ).onUpdate( this._onTween ).start();
-      TWEEN.update();
-
-    }
-
-    // ELSE, call: this._refreshCSS();
-  }
-  
-  _onTween = () => {
-    this.setState({ isAnimating: String( Date.now() ) });
-  }
-  
-  _getTweenData( pathElems ) {
-    const tweenData = { from: {}, to: {} };
-    [].forEach.call( pathElems, ( pathEl, i ) => {
-      tweenData.from[ i ] = 0;
-      tweenData.to[ i ]   = trimFloat( pathEl.getTotalLength() );
-    });
-    return tweenData;
-  }
-  
-  _getPathElems() {
-    const svgEl = findDOMNode( this._svg ).getElementsByTagName( 'svg' )[0];
-    return svgEl ? svgEl.querySelectorAll( 'path' ) : [];
-  }
-  
-  _getPathLengths( pathElems ) {
-    return [].map.call( pathElems, ( path ) => {
-      return this._hasSkipAttr( path.attributes ) ? 0 : trimFloat( path.getTotalLength() );
-    });
-  }
-  
-  // helper: check path attributes for data-mt="skip"
-  _hasSkipAttr( attributes ) {
-    let result = false;
-
-    // path.attributes is an obj with indexed keys, so we must iterate over them
-    // { '0': { name: 'd', value: 'M37.063' }, '1': { name: 'data-mt', value: 'skip' }, ... }
-    for( let key in attributes ) {
-      const { name, value } = attributes[ key ];
-      if ( !result && name === 'data-mt' && value === 'skip' ) {
-        result = true;
-      }
-    }
-
-    return result;
-  }
-  
-  
-  // --- ORIGINAL STUFF ---
-  
   // determine if to generate new classKey based on the incoming 'animate' prop
   _setClassKey( animate ) {
     if ( animate !== this._lastAnimate ) {
@@ -219,13 +148,13 @@ export default class MtSvgLines extends React.Component {
 
       return `
         @keyframes ${ keysId } {
-          0%   { stroke-dashoffset: ${ length }px; opacity: ${ startOpacity }; }
-          100% { stroke-dashoffset: 0px; opacity: 1; }
+          0%   { stroke-dashoffset: ${ length }; opacity: ${ startOpacity }; }
+          100% { stroke-dashoffset: 0; opacity: 1; }
         }
         .${ classKey } path:nth-of-type( ${ index + 1 } ) {
           opacity:                 0.01;
           stroke-dasharray:        ${ length };
-          stroke-dashoffset:       ${ length }px;
+          stroke-dashoffset:       ${ length };
           -webkit-animation:       ${ keysId } ${ duration }s ${ timing } ${ playback };
           animation:               ${ keysId } ${ duration }s ${ timing } ${ playback };
           -webkit-animation-delay: ${ totalDelay }s;
