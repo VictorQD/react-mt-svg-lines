@@ -37,7 +37,7 @@ In your JSX, wrap it around any valid SVG...
   </svg>
 </MtSvgLines>
 ```
-> When you move up to React v15.0+, it appears that it no longer requires SVG attributes to be camel-cased in JSX. So, rather than `strokeWidth` or `strokeLinecap`, you should be good with the standard `stroke-width`, `stroke-linecap`, etc.
+> As of React v15, your SVG attributes no longer require camel-casing in JSX. So, rather than `strokeWidth` or `strokeLinecap`, go with the standard `stroke-width`, `stroke-linecap`, etc.
 
 
 ### Props
