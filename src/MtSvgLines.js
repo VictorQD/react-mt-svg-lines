@@ -3,7 +3,8 @@ import { findDOMNode } from 'react-dom';
 import { shortUID, clamp, trimFloat } from './utils.js';
 
 import TWEEN from 'tween.js';
-import { VelocityComponent } from "velocity-react";
+
+const TWEEN_FPS = 60;
 
 export default class MtSvgLines extends React.Component {
 
@@ -48,13 +49,14 @@ export default class MtSvgLines extends React.Component {
     this.state = {
       classKey:      '',      // unique class name for the wrapper, acts as an internal "trigger"
       css:           '',      // generated CSS
-      tweenTimer:    0,
-      tweenProgress: 0
+      tweenTimer:    0,       // tween duration so far (ms)
+      tweenProgress: 0        // tween completion (pct)
     };
 
     this._lastAnimate  = '';
     this._lastClassKey = '';
-    this._tweenStart   = 0;
+    this._tweenStart   = 0;   // anim start timestamp
+    this._tweenLast    = 0;   // last tween update timestamp
   }
 
 
@@ -144,6 +146,8 @@ export default class MtSvgLines extends React.Component {
           pathEl.style.strokeDashoffset = this._tweenData[ i ];
         });
         
+        // determine throttle delay to next re-render
+        
         // trigger reflow!
         const t = setTimeout( () => {
           TWEEN.update();
@@ -154,10 +158,10 @@ export default class MtSvgLines extends React.Component {
   }
   
   _onTweenUpdate = () => {
-    // TODO: ADD THROTTLING?
     const { duration }  = this.props;
-    const tweenTimer    = this._tweenStart ? Date.now() - this._tweenStart : 0;
+    const tweenTimer    = this._getTweenTime();
     const tweenProgress = Math.ceil( tweenTimer / ( duration || 1 ) * 100 );
+    this._tweenLast     = Date.now();
     this.setState({ tweenTimer, tweenProgress });
   }
   
@@ -166,14 +170,21 @@ export default class MtSvgLines extends React.Component {
     console.log( '----------> DONE!', this._tweenStart );
   }
 
-  _getPathData( pathElems ) {
-    const tweenData = { from: {}, to: {} };
-    [].forEach.call( pathElems, ( pathEl, i ) => {
-      tweenData.to[ i ]   = 0;
-      tweenData.from[ i ] = trimFloat( pathEl.getTotalLength() );   // TODO: add check for hasSkipAttr!
-    });
-    return tweenData;
+
+  _getTweenTime() {
+    return this._tweenStart ? Date.now() - this._tweenStart : 0;
   }
+
+  
+  _getPathData( pathElems ) {
+    const pathData = { from: {}, to: {} };
+    [].forEach.call( pathElems, ( pathEl, i ) => {
+      pathData.to[ i ]   = 0;
+      pathData.from[ i ] = trimFloat( pathEl.getTotalLength() );   // TODO: add check for hasSkipAttr!
+    });
+    return pathData;
+  }
+  
   
   _getPathElems() {
     const svgEl = findDOMNode( this._svg ).getElementsByTagName( 'svg' )[0];
