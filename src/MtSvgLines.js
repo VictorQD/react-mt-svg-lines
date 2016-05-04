@@ -101,76 +101,63 @@ export default class MtSvgLines extends React.Component {
   // ------------------------------------------------------
 
   _animate() {
-    const { animate }  = this.props;
+    const { animate, duration }  = this.props;
     const { classKey } = this.state;
     
     // if new animation triggered...
     if ( animate && classKey !== this._lastClassKey ) {
-      const pathElems  = this._getPathElems();
-      const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
       
-      const tweenData  = this._getTweenData( pathElems );             // get to/from objects
-      this._tweenData  = { ...tweenData.from };                       // set tween object at start values
-      
-      // start tweening..
-      const tween = new TWEEN.Tween( this._tweenData )
-        .to( tweenData.to, 1000 )
-        // .onStart( this._onTweenStart )
-        .onUpdate( this._onTweenUpdate )
-        .onComplete( this._onTweenComplete )
-        .start();
+      // JS tweening TODO: add browser check
+      if ( !this._tweenStart ) {
+        const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
+        const pathElems  = this._getPathElems();                        // select path elems
+        this._pathData   = this._getPathData( pathElems );         // generate to/from data sets
+        this._tweenData  = { ...this._pathData.from };                  // set tween object at start values
         
-      // remember UID for next refresh
-      this._lastClassKey = classKey;
-      this._tweenStart   = Date.now();
-      
-      TWEEN.update();
+        // start the tweener..
+        const tween = new TWEEN.Tween( this._tweenData )
+          .to( this._pathData.to, duration )
+          .onUpdate( this._onTweenUpdate )
+          .onComplete( this._onTweenComplete )
+          .start();
+          
+        // set flags
+        this._lastClassKey = classKey;
+        this._tweenStart   = Date.now();
+        
+        TWEEN.update();
+      }
+      // ELSE, call: this._refreshCSS();
     
     // ongoing animation...
-    } else if ( this._tweenStart ) {
-      console.log( this._tweenData );
-      const pathElems = this._getPathElems();
-      TWEEN.update();
+    } else {
+      
+      // JS tweening TODO: add browser check
+      if ( this._tweenStart ) {
+        
+        // re-acquire svg paths
+        const pathElems = this._getPathElems();
+        
+        // apply tweened dash-offset to each path
+        [].forEach.call( pathElems, ( pathEl, i ) => {
+          pathEl.style.strokeDasharray  = this._pathData.from[ i ];
+          pathEl.style.strokeDashoffset = this._tweenData[ i ];
+        });
+        
+        // trigger reflow!
+        const t = setTimeout( () => {
+          TWEEN.update();
+          clearTimeout( t );
+        }, 0 );                   // TODO: maybe add throttling here?
+      }
     }
-    
-    
-    // if ( this._tweenStart ) {
-    //   console.log( this._tweenData );
-    //   const pathElems = this._getPathElems();
-    //   TWEEN.update();
-    //
-    // } else {
-    //   const pathElems  = this._getPathElems();
-    //   const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-    //
-    //   const tweenData  = this._getTweenData( pathElems );             // get to/from objects
-    //   this._tweenData  = { ...tweenData.from };                       // set tween object at start values
-    //
-    //   // start tweening..
-    //   const tween = new TWEEN.Tween( this._tweenData )
-    //     .to( tweenData.to, 1000 )
-    //     // .onStart( this._onTweenStart )
-    //     .onUpdate( this._onTweenUpdate )
-    //     .onComplete( this._onTweenComplete )
-    //     .start();
-    //
-    //   this._tweenStart = true;
-    //   TWEEN.update();
-    //
-    // }
-
-    // ELSE, call: this._refreshCSS();
   }
-  
-  // _onTweenStart = () => {
-  //   console.log( '----------> START!' );
-  //   this._tweenStart = Date.now();
-  // }
   
   _onTweenUpdate = () => {
     // TODO: ADD THROTTLING?
+    const { duration }  = this.props;
     const tweenTimer    = this._tweenStart ? Date.now() - this._tweenStart : 0;
-    const tweenProgress = tweenTimer / (this._getDurationMs() || 1) * 100;
+    const tweenProgress = Math.ceil( tweenTimer / ( duration || 1 ) * 100 );
     this.setState({ tweenTimer, tweenProgress });
   }
   
@@ -179,11 +166,11 @@ export default class MtSvgLines extends React.Component {
     console.log( '----------> DONE!', this._tweenStart );
   }
 
-  _getTweenData( pathElems ) {
+  _getPathData( pathElems ) {
     const tweenData = { from: {}, to: {} };
     [].forEach.call( pathElems, ( pathEl, i ) => {
-      tweenData.from[ i ] = 0;
-      tweenData.to[ i ]   = trimFloat( pathEl.getTotalLength() );
+      tweenData.to[ i ]   = 0;
+      tweenData.from[ i ] = trimFloat( pathEl.getTotalLength() );   // TODO: add check for hasSkipAttr!
     });
     return tweenData;
   }
@@ -193,15 +180,12 @@ export default class MtSvgLines extends React.Component {
     return svgEl ? svgEl.querySelectorAll( 'path' ) : [];
   }
   
-  _getDurationMs() {
-    const { duration } = this.props;
-    return duration ? trimFloat( duration / 1000 ) : 0;
-  }
+
   
   
   
   
-  // ADAPT INTO/FOR _getTweenData
+  // ADAPT INTO/FOR _getPathData
   _getPathLengths( pathElems ) {
     return [].map.call( pathElems, ( path ) => {
       return this._hasSkipAttr( path.attributes ) ? 0 : trimFloat( path.getTotalLength() );
@@ -284,7 +268,7 @@ export default class MtSvgLines extends React.Component {
         }
         .${ classKey } path:nth-of-type( ${ index + 1 } ) {
           opacity:                 0.01;
-          stroke-dasharray:        ${ length };
+          stroke-dasharray:        ${ length }px;
           stroke-dashoffset:       ${ length }px;
           -webkit-animation:       ${ keysId } ${ duration }s ${ timing } ${ playback };
           animation:               ${ keysId } ${ duration }s ${ timing } ${ playback };
