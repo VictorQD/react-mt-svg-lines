@@ -46,13 +46,15 @@ export default class MtSvgLines extends React.Component {
 
     // classKey is a unique class name, used as internal anim "trigger" (re-generated each time anim is to run)
     this.state = {
-      classKey:    '',      // unique class name for the wrapper, acts as an internal "trigger"
-      css:         '',      // generated CSS
+      classKey:      '',      // unique class name for the wrapper, acts as an internal "trigger"
+      css:           '',      // generated CSS
+      tweenTimer:    0,
+      tweenProgress: 0
     };
 
     this._lastAnimate  = '';
     this._lastClassKey = '';
-    this._pathElems    = [];
+    this._tweenStart   = 0;
   }
 
 
@@ -99,35 +101,84 @@ export default class MtSvgLines extends React.Component {
   // ------------------------------------------------------
 
   _animate() {
-    // const tween = TWEEN.Tween();
-    const { isAnimating } = this.state;
-
-    if ( isAnimating ) {
-      // console.log( 'animating...' );
+    const { animate }  = this.props;
+    const { classKey } = this.state;
+    
+    // if new animation triggered...
+    if ( animate && classKey !== this._lastClassKey ) {
+      const pathElems  = this._getPathElems();
+      const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
+      
+      const tweenData  = this._getTweenData( pathElems );             // get to/from objects
+      this._tweenData  = { ...tweenData.from };                       // set tween object at start values
+      
+      // start tweening..
+      const tween = new TWEEN.Tween( this._tweenData )
+        .to( tweenData.to, 1000 )
+        // .onStart( this._onTweenStart )
+        .onUpdate( this._onTweenUpdate )
+        .onComplete( this._onTweenComplete )
+        .start();
+        
+      // remember UID for next refresh
+      this._lastClassKey = classKey;
+      this._tweenStart   = Date.now();
+      
+      TWEEN.update();
+    
+    // ongoing animation...
+    } else if ( this._tweenStart ) {
       console.log( this._tweenData );
+      const pathElems = this._getPathElems();
       TWEEN.update();
-      
-    } else {
-      const pathElems   = this._getPathElems();
-      const pathLenghts = this._getPathLengths( pathElems );
-      const pathQty     = pathLenghts.length || 1;
-      const startDelay  = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-      
-      const tweenData = this._getTweenData( pathElems );
-      
-      this._tweenData = { ...tweenData.from }
-      this._tween = new TWEEN.Tween( this._tweenData ).to( tweenData.to, 1000 ).onUpdate( this._onTween ).start();
-      TWEEN.update();
-
     }
+    
+    
+    // if ( this._tweenStart ) {
+    //   console.log( this._tweenData );
+    //   const pathElems = this._getPathElems();
+    //   TWEEN.update();
+    //
+    // } else {
+    //   const pathElems  = this._getPathElems();
+    //   const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
+    //
+    //   const tweenData  = this._getTweenData( pathElems );             // get to/from objects
+    //   this._tweenData  = { ...tweenData.from };                       // set tween object at start values
+    //
+    //   // start tweening..
+    //   const tween = new TWEEN.Tween( this._tweenData )
+    //     .to( tweenData.to, 1000 )
+    //     // .onStart( this._onTweenStart )
+    //     .onUpdate( this._onTweenUpdate )
+    //     .onComplete( this._onTweenComplete )
+    //     .start();
+    //
+    //   this._tweenStart = true;
+    //   TWEEN.update();
+    //
+    // }
 
     // ELSE, call: this._refreshCSS();
   }
   
-  _onTween = () => {
-    this.setState({ isAnimating: String( Date.now() ) });
+  // _onTweenStart = () => {
+  //   console.log( '----------> START!' );
+  //   this._tweenStart = Date.now();
+  // }
+  
+  _onTweenUpdate = () => {
+    // TODO: ADD THROTTLING?
+    const tweenTimer    = this._tweenStart ? Date.now() - this._tweenStart : 0;
+    const tweenProgress = tweenTimer / (this._getDurationMs() || 1) * 100;
+    this.setState({ tweenTimer, tweenProgress });
   }
   
+  _onTweenComplete = () => {
+    this._tweenStart = 0;
+    console.log( '----------> DONE!', this._tweenStart );
+  }
+
   _getTweenData( pathElems ) {
     const tweenData = { from: {}, to: {} };
     [].forEach.call( pathElems, ( pathEl, i ) => {
@@ -142,6 +193,15 @@ export default class MtSvgLines extends React.Component {
     return svgEl ? svgEl.querySelectorAll( 'path' ) : [];
   }
   
+  _getDurationMs() {
+    const { duration } = this.props;
+    return duration ? trimFloat( duration / 1000 ) : 0;
+  }
+  
+  
+  
+  
+  // ADAPT INTO/FOR _getTweenData
   _getPathLengths( pathElems ) {
     return [].map.call( pathElems, ( path ) => {
       return this._hasSkipAttr( path.attributes ) ? 0 : trimFloat( path.getTotalLength() );

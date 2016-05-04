@@ -7,7 +7,7 @@ var offsetMe = function() {
   offset--;
 
   requestAnimationFrame(offsetMe);
-}
+};
 
 offsetMe();
 
@@ -15,7 +15,7 @@ offsetMe();
 
 var position = { x: 100, y: 0 }
 var tween = new TWEEN.Tween(position);
-tween.to({ x: 200 }, 1000);
+tween.to({ x: 200 }, 1000).easing( TWEEN.Easing.Elastic.InOut );
 tween.start();
 
 tween.to({ x: 200 }, 1000);
@@ -27,3 +27,9 @@ function animate() {
   TWEEN.update();
   // [...]
 }
+
+// ---------------------------------
+
+<VelocityComponent animation={{ opacity: isShow ? 1 : 0 }} duration={ 500 } runOnMount={ true }>
+  <MySubComponent/>
+</VelocityComponent>
