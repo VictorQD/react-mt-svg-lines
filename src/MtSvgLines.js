@@ -4,7 +4,7 @@ import { shortUID, clamp, trimFloat } from './utils.js';
 
 import TWEEN from 'tween.js';
 
-const TWEEN_FPS = 60;
+const MS_PER_UPDATE = 1000 / 60;
 
 export default class MtSvgLines extends React.Component {
 
@@ -49,7 +49,7 @@ export default class MtSvgLines extends React.Component {
     this.state = {
       classKey:      '',      // unique class name for the wrapper, acts as an internal "trigger"
       css:           '',      // generated CSS
-      tweenTimer:    0,       // tween duration so far (ms)
+      tweenElapsed:    0,       // tween duration so far (ms)
       tweenProgress: 0        // tween completion (pct)
     };
 
@@ -146,23 +146,23 @@ export default class MtSvgLines extends React.Component {
           pathEl.style.strokeDashoffset = this._tweenData[ i ];
         });
         
-        // determine throttle delay to next re-render
-        
-        // trigger reflow!
+        // throttle delay for next update
+        const delay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
+
         const t = setTimeout( () => {
           TWEEN.update();
           clearTimeout( t );
-        }, 0 );                   // TODO: maybe add throttling here?
+        }, Math.max( 0, delay ) );
       }
     }
   }
   
   _onTweenUpdate = () => {
     const { duration }  = this.props;
-    const tweenTimer    = this._getTweenTime();
-    const tweenProgress = Math.ceil( tweenTimer / ( duration || 1 ) * 100 );
+    const tweenElapsed  = this._getTweenElapsed();
+    const tweenProgress = Math.ceil( tweenElapsed / ( duration || 1 ) * 100 );
     this._tweenLast     = Date.now();
-    this.setState({ tweenTimer, tweenProgress });
+    this.setState({ tweenElapsed, tweenProgress });
   }
   
   _onTweenComplete = () => {
@@ -171,7 +171,7 @@ export default class MtSvgLines extends React.Component {
   }
 
 
-  _getTweenTime() {
+  _getTweenElapsed() {
     return this._tweenStart ? Date.now() - this._tweenStart : 0;
   }
 
@@ -190,9 +190,6 @@ export default class MtSvgLines extends React.Component {
     const svgEl = findDOMNode( this._svg ).getElementsByTagName( 'svg' )[0];
     return svgEl ? svgEl.querySelectorAll( 'path' ) : [];
   }
-  
-
-  
   
   
   
