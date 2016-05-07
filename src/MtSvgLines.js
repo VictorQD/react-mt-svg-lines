@@ -1,8 +1,17 @@
 import React, { PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
 import { shortUID, clamp, trimFloat } from './utils.js';
-
 import TWEEN from 'tween.js';
+
+const EASING = {
+  'ease':        TWEEN.Easing.Quadratic.InOut,
+  'ease-in':     TWEEN.Easing.Cubic.In,
+  'ease-out':    TWEEN.Easing.Cubic.Out,
+  'ease-in-out': TWEEN.Easing.Cubic.InOut,
+  'linear':      TWEEN.Easing.Linear.None,
+  'step-start':  TWEEN.Easing.Bounce.In,   // not quite the same thing ;)
+  'step-end':    TWEEN.Easing.Bounce.Out   // not quite the same thing ;)
+};
 
 const MS_PER_UPDATE = 1000 / 60;
 
@@ -76,7 +85,7 @@ export default class MtSvgLines extends React.Component {
 
     return (
       <span
-        ref={ ( c ) => this._svg = c }
+        ref={ ( c ) => this._svgWrapper = c }
         className={ `${ className } ${ classKey }` }
         { ...props }
       >
@@ -103,7 +112,7 @@ export default class MtSvgLines extends React.Component {
   // ------------------------------------------------------
 
   _animate() {
-    const { animate, duration }  = this.props;
+    const { animate, duration, timing, playback }  = this.props;
     const { classKey } = this.state;
     
     // if new animation triggered...
@@ -111,23 +120,57 @@ export default class MtSvgLines extends React.Component {
       
       // JS tweening TODO: add browser check
       if ( !this._tweenStart ) {
+        // parse props
         const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-        const pathElems  = this._getPathElems();                        // select path elems
-        this._pathData   = this._getPathData( pathElems );         // generate to/from data sets
-        this._tweenData  = { ...this._pathData.from };                  // set tween object at start values
+        const isReverse  = playback.includes( 'reverse' );
+        const isYoYo     = playback.includes( 'alternate-reverse' ) && playback.includes( 'both' );
+        let numOfRepeats = parseInt( playback, 10 ) || 0;
         
-        // start the tweener..
-        const tween = new TWEEN.Tween( this._tweenData )
-          .to( this._pathData.to, duration )
-          .onUpdate( this._onTweenUpdate )
-          .onComplete( this._onTweenComplete )
-          .start();
+        if ( numOfRepeats > 0 ) { numOfRepeats = numOfRepeats - 1 };
+        if ( playback.includes( 'infinite' ) ) { numOfRepeats = Infinity };
+        
+        // acquire path elems and generate to/from data sets
+        const pathElems = this._selectPathElems();
+        const pathData  = this._getPathData( pathElems );
+        
+        if ( isReverse && !isYoYo ) {
+          this._pathDataFrom = pathData.to;
+          this._pathDataTo   = pathData.from;
+          this._tweenData    = { ...this._pathDataFrom };
           
+        } else {
+          this._pathDataFrom = pathData.from;
+          this._pathDataTo   = pathData.to;
+          this._tweenData    = { ...this._pathDataFrom };
+        }
+        
+        [].forEach.call( pathElems, ( pathEl, i ) => {
+          pathEl.style.strokeDasharray  = this._pathDataFrom[ i ];
+          pathEl.style.strokeDashoffset = this._tweenData[ i ];
+        });
+        
+        console.log( startDelay );
+        
+        // init the tweener..
+        const tween = new TWEEN.Tween( this._tweenData )
+          .to( this._pathDataTo, duration )
+          .easing( EASING[ timing ] )
+          .repeat( numOfRepeats )
+          .onUpdate( this._onTweenUpdate )
+          .onComplete( this._onTweenComplete );
+        
+        if ( isYoYo ) { tween.yoyo( true ); }
+        
         // set flags
         this._lastClassKey = classKey;
         this._tweenStart   = Date.now();
         
-        TWEEN.update();
+        // kick off JS tweening..
+        const t = setTimeout( () => {
+          tween.start()
+          TWEEN.update();
+          clearTimeout( t );
+        }, Math.max( 0, startDelay ) );
       }
       // ELSE, call: this._refreshCSS();
     
@@ -138,24 +181,26 @@ export default class MtSvgLines extends React.Component {
       if ( this._tweenStart ) {
         
         // re-acquire svg paths
-        const pathElems = this._getPathElems();
+        const pathElems = this._selectPathElems();
         
         // apply tweened dash-offset to each path
         [].forEach.call( pathElems, ( pathEl, i ) => {
-          pathEl.style.strokeDasharray  = this._pathData.from[ i ];
+          pathEl.style.strokeDasharray  = this._pathDataFrom[ i ];
           pathEl.style.strokeDashoffset = this._tweenData[ i ];
         });
         
         // throttle delay for next update
-        const delay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
+        const frameDelay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
 
+        // reflow and trigger update..
         const t = setTimeout( () => {
           TWEEN.update();
           clearTimeout( t );
-        }, Math.max( 0, delay ) );
+        }, Math.max( 0, frameDelay ) );
       }
     }
   }
+  
   
   _onTweenUpdate = () => {
     const { duration }  = this.props;
@@ -167,37 +212,33 @@ export default class MtSvgLines extends React.Component {
   
   _onTweenComplete = () => {
     this._tweenStart = 0;
-    console.log( '----------> DONE!', this._tweenStart );
   }
-
 
   _getTweenElapsed() {
     return this._tweenStart ? Date.now() - this._tweenStart : 0;
   }
 
-  
-  _getPathData( pathElems ) {
-    const pathData = { from: {}, to: {} };
-    [].forEach.call( pathElems, ( pathEl, i ) => {
-      pathData.to[ i ]   = 0;
-      pathData.from[ i ] = trimFloat( pathEl.getTotalLength() );   // TODO: add check for hasSkipAttr!
-    });
-    return pathData;
-  }
-  
-  
-  _getPathElems() {
-    const svgEl = findDOMNode( this._svg ).getElementsByTagName( 'svg' )[0];
+  // acquire selection of SVG 'path' elems within this element
+  _selectPathElems() {
+    const svgEl = findDOMNode( this._svgWrapper ).getElementsByTagName( 'svg' )[0];
     return svgEl ? svgEl.querySelectorAll( 'path' ) : [];
   }
   
-  
-  
-  // ADAPT INTO/FOR _getPathData
-  _getPathLengths( pathElems ) {
-    return [].map.call( pathElems, ( path ) => {
-      return this._hasSkipAttr( path.attributes ) ? 0 : trimFloat( path.getTotalLength() );
+  // generate an object containing 'from' and 'to' sub-objects to tween between
+  // each object contains same set of keys, which correspond to each path's index in the selection
+  // the 'from' object values are the paths' lengths
+  // the 'to' object values are 0 (unless 'skip' attr is present, then equal path's length)
+  _getPathData( pathElems ) {
+    const pathData = { from: {}, to: {} };
+    
+    [].forEach.call( pathElems, ( pathEl, i ) => {
+      const isSkipAttr   = this._hasSkipAttr( pathEl.attributes );
+      const pathLengh    = trimFloat( pathEl.getTotalLength() );
+      pathData.to[ i ]   = isSkipAttr ? pathLengh : 0;
+      pathData.from[ i ] = pathLengh;
     });
+    
+    return pathData;
   }
   
   // helper: check path attributes for data-mt="skip"
@@ -216,8 +257,16 @@ export default class MtSvgLines extends React.Component {
     return result;
   }
   
+
+  
   
   // --- ORIGINAL STUFF ---
+  
+  _getPathLengths( pathElems ) {
+    return [].map.call( pathElems, ( path ) => {
+      return this._hasSkipAttr( path.attributes ) ? 0 : trimFloat( path.getTotalLength() );
+    });
+  }
   
   // determine if to generate new classKey based on the incoming 'animate' prop
   _setClassKey( animate ) {
@@ -249,7 +298,7 @@ export default class MtSvgLines extends React.Component {
 
     // helper: return an array containing lengths of all path elems inside the SVG
     function _getPathLengths() {
-      const pathElems = findDOMNode( this._svg )
+      const pathElems = findDOMNode( this._svgWrapper )
         .getElementsByTagName( 'svg' )[0]
         .querySelectorAll( 'path' ) || [];
 
