@@ -30,7 +30,7 @@ export default class DemoPage extends React.Component {
 
         <div style={ styles.column }>
           <MtSvgLines
-            animate={ triggerCheckAnim }
+            animate={ Math.floor(Math.random() * (1000 - 500)) + 500 }
           >
             <SvgCheckmark />
           </MtSvgLines>
