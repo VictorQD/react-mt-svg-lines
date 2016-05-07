@@ -1,6 +1,6 @@
 import React, { PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
-import { shortUID, clamp, trimFloat } from './utils.js';
+import { shortUID, clamp, trimFloat, isMsBrowser } from './utils.js';
 import TWEEN from 'tween.js';
 
 const EASING = {
@@ -36,7 +36,8 @@ export default class MtSvgLines extends React.Component {
       'step-end'
     ]),
     playback:  PropTypes.string,            // iteration-count || direction || fill-mode (perhaps even play-state)
-    fade:      PropTypes.bool               // apply a fade-in to each path
+    fade:      PropTypes.bool,              // apply a fade-in to each path
+    jsOnly:    PropTypes.bool               // apply JS animation, regardless of browser
   };
 
   // defaults
@@ -47,7 +48,8 @@ export default class MtSvgLines extends React.Component {
     stagger:   0,
     timing:    'ease',
     playback:  'forwards',
-    fade:      false
+    fade:      false,
+    jsOnly:    false
   };
 
 
