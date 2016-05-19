@@ -56,9 +56,8 @@ export default class MtSvgLines extends React.Component {
   constructor( props ) {
     super( props );
 
-    // classKey is a unique class name, used as internal anim "trigger" (re-generated each time anim is to run)
     this.state = {
-      classKey:      '',      // unique class name for the wrapper, acts as an internal "trigger"
+      classKey:      '',      // unique class name for the wrapper, acts as internal "trigger" (re-generated each time anim is to run)
       css:           '',      // generated CSS
       tweenElapsed:  0,       // tween duration so far (ms)
       tweenProgress: 0        // tween completion (pct)
@@ -66,10 +65,10 @@ export default class MtSvgLines extends React.Component {
 
     this._lastAnimate  = '';
     this._lastClassKey = '';
-    
+
     this._tweenStart   = 0;   // anim start timestamp
     this._tweenLast    = 0;   // last tween update timestamp
-    
+
     this._pathElems    = [];
     this._pathDataFrom = {};
     this._pathDataTo   = {};
@@ -125,44 +124,44 @@ export default class MtSvgLines extends React.Component {
   _animate() {
     const { animate, duration, timing, playback }  = this.props;
     const { classKey } = this.state;
-    
-    // if should start new animation...
+
+    // if start new animation...
     if ( animate && classKey !== this._lastClassKey ) {
-      
+
       // JS tweening TODO: add browser check
       if ( !this._tweenStart ) {
         // set flags
         this._tweenStart   = Date.now();
         this._lastClassKey = classKey;
-        
+
         // parse props
         const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
         const isReverse  = playback.includes( 'reverse' );
         const isYoYo     = playback.includes( 'alternate-reverse' ) && playback.includes( 'both' );
         let numOfRepeats = parseInt( playback, 10 ) || 0;
-        
+
         if ( numOfRepeats > 0 ) { numOfRepeats = numOfRepeats - 1; }
         if ( playback.includes( 'infinite' ) ) { numOfRepeats = Infinity; }
-        
+
         // acquire path elems and generate to/from data sets
         this._pathElems = this._selectPathElems();
         const pathData  = this._getPathData( this._pathElems );
-        
+
         if ( isReverse && !isYoYo ) {
           this._pathDataFrom = pathData.to;
           this._pathDataTo   = pathData.from;
           this._tweenData    = { ...this._pathDataFrom };
-          
+
         } else {
           this._pathDataFrom = pathData.from;
           this._pathDataTo   = pathData.to;
           this._tweenData    = { ...this._pathDataFrom };
         }
-        
+
         // set paths'offsets to start positions
         this._setStrokeDasharray( this._pathElems, this._pathDataFrom );
         this._setStrokeDashoffset( this._pathElems, this._tweenData );
-        
+
         // init the tweener..
         const tween = new TWEEN.Tween( this._tweenData )
           .to( this._pathDataTo, duration )
@@ -170,7 +169,7 @@ export default class MtSvgLines extends React.Component {
           .repeat( numOfRepeats )
           .onUpdate( this._onTweenUpdate )
           .onComplete( this._onTweenComplete );
-        
+
         if ( isYoYo ) { tween.yoyo( true ); }
 
         // kick off JS tweening..
@@ -181,16 +180,16 @@ export default class MtSvgLines extends React.Component {
         }, Math.max( 0, startDelay ) );
       }
       // ELSE, call: this._refreshCSS();
-    
+
     // ongoing animation...
     } else {
-      
+
       // JS tweening TODO: add browser check
       if ( this._tweenStart ) {
         // apply tweened dash-offsets to all paths
         this._setStrokeDashoffset( this._pathElems, this._tweenData );
 
-        // reflow and trigger update (after throttheld delay 'til next "frame")
+        // reflow and trigger update (when next "frame")
         const frameDelay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
         const t = setTimeout( () => {
           TWEEN.update();
@@ -199,7 +198,7 @@ export default class MtSvgLines extends React.Component {
       }
     }
   }
-  
+
   /*
    * After each Tween update, set state to re-render..
    */
@@ -210,7 +209,7 @@ export default class MtSvgLines extends React.Component {
     this._tweenLast     = Date.now();
     this.setState({ tweenElapsed, tweenProgress });
   }
-  
+
   /*
    * When animation completes, clear start timestamp
    */
@@ -232,7 +231,7 @@ export default class MtSvgLines extends React.Component {
     const svgEl = findDOMNode( this._svgWrapper ).getElementsByTagName( 'svg' )[0];
     return svgEl ? svgEl.querySelectorAll( 'path' ) : [];
   }
-  
+
   /*
    * Generate an object containing 'from' and 'to' sub-objects
    * Each object contains same set of indexed keys, per the path selection
@@ -241,17 +240,17 @@ export default class MtSvgLines extends React.Component {
    */
   _getPathData( pathElems ) {
     const pathData = { from: {}, to: {} };
-    
+
     [].forEach.call( pathElems, ( pathEl, i ) => {
       const isSkipAttr   = this._hasSkipAttr( pathEl.attributes );
       const pathLengh    = trimFloat( pathEl.getTotalLength() );
       pathData.to[ i ]   = isSkipAttr ? pathLengh : 0;
       pathData.from[ i ] = pathLengh;
     });
-    
+
     return pathData;
   }
-  
+
   /*
    * Check path's attributes for data-mt="skip"
    */
@@ -270,7 +269,7 @@ export default class MtSvgLines extends React.Component {
 
     return result;
   }
-  
+
   /*
    * Set style.strokeDasharray on all paths in selection, from the provided key-val object
    */
@@ -279,7 +278,7 @@ export default class MtSvgLines extends React.Component {
       pathEl.style.strokeDasharray = pathData[ i ];
     });
   }
-  
+
   /*
    * Set style.strokeDashoffset on all paths in selection, from the provided key-val object
    */
@@ -288,18 +287,18 @@ export default class MtSvgLines extends React.Component {
       pathEl.style.strokeDashoffset = pathData[ i ];
     });
   }
-  
 
-  
-  
+
+
+
   // --- ORIGINAL STUFF ---
-  
+
   _getPathLengths( pathElems ) {
     return [].map.call( pathElems, ( path ) => {
       return this._hasSkipAttr( path.attributes ) ? 0 : trimFloat( path.getTotalLength() );
     });
   }
-  
+
   // determine if to generate new classKey based on the incoming 'animate' prop
   _setClassKey( animate ) {
     if ( animate !== this._lastAnimate ) {
