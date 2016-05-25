@@ -13,15 +13,29 @@ export default class DemoPage extends React.Component {
     super( props );
 
     this.state = {
-      triggerCheckAnim:   true,
-      triggerSigAnim:     true,
-      triggerChartAnim:   true,
-      triggerSpinnerAnim: true
+      triggerCheckAnim:     true,
+      triggerSigAnim:       true,
+      triggerChartAnim:     true,
+      triggerSpinnerAnim:   true,
+
+      triggerCheckAnimJS:   true,
+      triggerSigAnimJS:     true,
+      triggerChartAnimJS:   true,
+      triggerSpinnerAnimJS: true
     };
   }
 
   render() {
-    const { triggerCheckAnim, triggerSigAnim, triggerChartAnim, triggerSpinnerAnim } = this.state;
+    const {
+      triggerCheckAnim,
+      triggerSigAnim,
+      triggerChartAnim,
+      triggerSpinnerAnim,
+      triggerCheckAnimJS,
+      triggerSigAnimJS,
+      triggerChartAnimJS,
+      triggerSpinnerAnimJS,
+    } = this.state;
 
     return (
       <div style={ styles.wrapper }>
@@ -30,7 +44,7 @@ export default class DemoPage extends React.Component {
 
         <div style={ styles.column }>
           <MtSvgLines
-            animate={ Math.floor(Math.random() * (1000 - 500)) + 501 }
+            animate={ triggerCheckAnim }
             jsOnly={ false }
           >
             <SvgCheckmark />
@@ -51,14 +65,14 @@ export default class DemoPage extends React.Component {
 
         <div style={ styles.column }>
           <MtSvgLines
-            animate={ Math.floor(Math.random() * (1000 - 500)) + 501 }
+            animate={ triggerCheckAnimJS }
             jsOnly={ true }
           >
             <SvgCheckmark />
           </MtSvgLines>
 
           <div style={ styles.info }>
-            { this._renderTrigger( 'triggerCheckAnim') }
+            { this._renderTrigger( 'triggerCheckAnimJS') }
             <p style={ styles.props }>
               <em>default props</em><br/>
               duration: <strong>1000</strong><br/>

@@ -1,5 +1,7 @@
 import React, { PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
+// import shallowCompare from 'react-addons-shallow-compare';
+
 import { shortUID, clamp, trimFloat, isMsBrowser } from './utils.js';
 import TWEEN from 'tween.js';
 
@@ -37,6 +39,7 @@ export default class MtSvgLines extends React.Component {
     ]),
     playback:  PropTypes.string,            // iteration-count || direction || fill-mode (perhaps even play-state)
     fade:      PropTypes.bool,              // apply a fade-in to each path
+    callback:  PropTypes.func,              // callback fn to run when when anim completes
     jsOnly:    PropTypes.bool               // apply JS animation, regardless of browser
   };
 
@@ -49,6 +52,7 @@ export default class MtSvgLines extends React.Component {
     timing:    'ease',
     playback:  'forwards',
     fade:      false,
+    callback:  () => { console.log( 'done!' ) },
     jsOnly:    false
   };
 
@@ -66,14 +70,19 @@ export default class MtSvgLines extends React.Component {
     this._lastAnimate  = '';
     this._lastClassKey = '';
 
-    this._tweenStart   = 0;   // anim start timestamp (JS)
-    this._tweenLast    = 0;   // last tween update timestamp (JS)
+    this._animStart    = 0;    // anim start timestamp (CSS & JS)
+    this._tweenLast    = 0;    // last tween update timestamp (JS)
 
     this._pathElems    = [];
     this._pathDataFrom = {};
     this._pathDataTo   = {};
     this._tweenData    = {};
   }
+
+
+  // shouldComponentUpdate( nextProps, nextState ) {
+  //   return shallowCompare( this, nextProps, nextState );
+  // }
 
 
   componentWillMount() {
@@ -86,15 +95,17 @@ export default class MtSvgLines extends React.Component {
   }
 
 
+
   render() {
-    const { className, animate, duration, stagger, timing, children, jsOnly, ...props } = this.props;
+    // destruct all component-specific props, so '...rest' can be applied to wrapper <span>
+    const { className, animate, duration, stagger, timing, playback, fade, jsOnly, children, ...rest } = this.props;
     const { classKey, css } = this.state;
 
     return (
       <span
         ref={ ( c ) => this._svgWrapper = c }
         className={ `${ className } ${ classKey }` }
-        { ...props }
+        { ...rest }
       >
         { !jsOnly && <style>{ css }</style> }
 
@@ -123,16 +134,19 @@ export default class MtSvgLines extends React.Component {
     const { animate, duration, stagger, timing, playback, jsOnly }  = this.props;
     const { classKey } = this.state;
 
+    const isStartNewAnim = animate && classKey !== this._lastClassKey;
+    const isAnimJS       = isMsBrowser() || jsOnly;
+
     // START NEW ANIMATION...
-    if ( animate && classKey !== this._lastClassKey ) {
+    if ( isStartNewAnim ) {
       console.log( 'start anim!' );
 
       // set flags
-      this._tweenStart   = Date.now();
+      this._animStart   = Date.now();
       this._lastClassKey = classKey;
 
       // JS implementation
-      if ( isMsBrowser() || jsOnly ) {
+      if ( isAnimJS ) {
         console.log( 'JS anim start!' );
 
         // parse props for use with Tween.js
@@ -169,7 +183,7 @@ export default class MtSvgLines extends React.Component {
           .easing( EASING[ timing ] )
           .repeat( numOfRepeats )
           .onUpdate( this._onTweenUpdate )
-          .onComplete( this._onTweenComplete );
+          .onComplete( this._onAnimComplete );
 
         if ( isYoYo ) { tween.yoyo( true ); }
 
@@ -193,7 +207,7 @@ export default class MtSvgLines extends React.Component {
         } else {
           // otherwise, animate away..
           // 1) determine number of path elems in svg
-          const pathLenghts = this._getPathLengths.call( this );
+          const pathLenghts = this._getPathLengths();
           const pathQty     = pathLenghts.length || 1;
 
           // 2) calc all timing values
@@ -204,35 +218,41 @@ export default class MtSvgLines extends React.Component {
 
           // 3) concat generated CSS, one path at a time..
           pathLenghts.forEach( ( length, index ) => {
-            css += this._getPathCSS.call( this, index, length, startDelay, pathStaggerDelay, pathDrawDuration );
+            css += this._getPathCSS( index, length, startDelay, pathStaggerDelay, pathDrawDuration );
           });
+
+          // set up on-complete timer
+          const t = setTimeout( () => {
+            clearTimeout( t );
+            this._onAnimComplete();
+          }, startDelay + duration );
         }
 
-        // remember UID for next refresh
-        this._lastClassKey = classKey;
-
         // set state (re-render)
-        this.setState({ css });
-
+        this.setState( { css } );
       }
 
 
     // CONTINUING ANIMATION...
     } else {
+
       // JS implementation
-      if ( isMsBrowser() || jsOnly ) {
-        console.log( 'JS anim cont...' );
+      if ( isAnimJS ) {
 
-        // apply tweened dash-offsets to all paths
-        this._setStrokeDashoffset( this._pathElems, this._tweenData );
+        if ( this._animStart ) {
+          console.log( 'JS anim cont...' );
 
-        // reflow and trigger update (when next "frame")
-        const frameDelay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
-        const t = setTimeout( () => {
-          TWEEN.update();
-          clearTimeout( t );
-        }, Math.max( 0, frameDelay ) );
+          // apply tweened dash-offsets to all paths
+          this._setStrokeDashoffset( this._pathElems, this._tweenData );
 
+          // reflow and trigger update (when next "frame")
+          const frameDelay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
+          const t = setTimeout( () => {
+            TWEEN.update();
+            clearTimeout( t );
+          }, Math.max( 0, frameDelay ) );
+
+        }
 
       // CSS implementation
       } else {
@@ -256,10 +276,11 @@ export default class MtSvgLines extends React.Component {
 
 
   /*
-   * When animation completes, clear start timestamp
+   * When animation completes, run callback (if any), clear start timestamp
    */
-  _onTweenComplete = () => {
-    this._tweenStart = 0;
+  _onAnimComplete = () => {
+    this.props.callback();
+    this._animStart = 0;
   }
 
 
@@ -267,7 +288,7 @@ export default class MtSvgLines extends React.Component {
    * Return duration of ongoing tween thus far (ms)
    */
   _getTweenElapsed() {
-    return this._tweenStart ? Date.now() - this._tweenStart : 0;
+    return this._animStart ? Date.now() - this._animStart : 0;
   }
 
 
@@ -391,7 +412,7 @@ export default class MtSvgLines extends React.Component {
 
 
   /*
-   * If animate flag is new, set a new classKey into state (trigger anim)
+   * Check if animate flag is new, and if true, set a new classKey into state (trigger anim)
    */
   _setClassKey( animate ) {
     if ( animate !== this._lastAnimate ) {
