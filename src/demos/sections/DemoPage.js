@@ -30,7 +30,29 @@ export default class DemoPage extends React.Component {
 
         <div style={ styles.column }>
           <MtSvgLines
-            animate={ Math.floor(Math.random() * (1000 - 500)) + 500 }
+            animate={ Math.floor(Math.random() * (1000 - 500)) + 501 }
+            jsOnly={ false }
+          >
+            <SvgCheckmark />
+          </MtSvgLines>
+
+          <div style={ styles.info }>
+            { this._renderTrigger( 'triggerCheckAnim') }
+            <p style={ styles.props }>
+              <em>default props</em><br/>
+              duration: <strong>1000</strong><br/>
+              stagger:  <strong>0</strong><br/>
+              timing:   <strong>ease</strong><br/>
+              playback: <strong>forwards</strong><br/>
+              fade:     <strong>false</strong>
+            </p>
+          </div>
+        </div>
+
+        <div style={ styles.column }>
+          <MtSvgLines
+            animate={ Math.floor(Math.random() * (1000 - 500)) + 501 }
+            jsOnly={ true }
           >
             <SvgCheckmark />
           </MtSvgLines>
