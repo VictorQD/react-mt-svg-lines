@@ -19,9 +19,9 @@ export default class DemoPage extends React.Component {
       triggerSpinnerAnim:   true,
 
       triggerCheckAnimJS:   true,
-      triggerSigAnimJS:     true,
-      triggerChartAnimJS:   true,
-      triggerSpinnerAnimJS: true
+      triggerSigAnimJS:     false,
+      triggerChartAnimJS:   false,
+      triggerSpinnerAnimJS: false
     };
   }
 

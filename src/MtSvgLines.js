@@ -160,13 +160,14 @@ export default class MtSvgLines extends React.Component {
         if ( isReverse && !isYoYo ) {
           this._pathDataFrom = pathData.to;
           this._pathDataTo   = pathData.from;
-          this._tweenData    = { ...this._pathDataFrom };
 
         } else {
           this._pathDataFrom = pathData.from;
           this._pathDataTo   = pathData.to;
-          this._tweenData    = { ...this._pathDataFrom };
         }
+
+        // init tweener object
+        this._tweenData = { ...this._pathDataFrom };
 
         // set paths' offsets to start positions
         this._setStrokeDasharray( this._pathElems, this._pathDataFrom );
