@@ -1,6 +1,5 @@
 import React, { PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
-// import shallowCompare from 'react-addons-shallow-compare';
 
 import { shortUID, clamp, trimFloat, isMsBrowser } from './utils.js';
 import TWEEN from 'tween.js';
@@ -78,11 +77,6 @@ export default class MtSvgLines extends React.Component {
     this._pathDataTo   = {};
     this._tweenData    = {};
   }
-
-
-  // shouldComponentUpdate( nextProps, nextState ) {
-  //   return shallowCompare( this, nextProps, nextState );
-  // }
 
 
   componentWillMount() {
@@ -234,25 +228,22 @@ export default class MtSvgLines extends React.Component {
 
 
     // CONTINUING ANIMATION...
-    } else {
+    } else if ( this._animStart ) {
 
       // JS implementation
       if ( isAnimJS ) {
+        console.log( 'JS anim cont...' );
 
-        if ( this._animStart ) {
-          console.log( 'JS anim cont...' );
+        // apply tweened dash-offsets to all paths
+        this._setStrokeDashoffset( this._pathElems, this._tweenData );
 
-          // apply tweened dash-offsets to all paths
-          this._setStrokeDashoffset( this._pathElems, this._tweenData );
+        // reflow and trigger update (when next "frame")
+        const frameDelay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
+        const t = setTimeout( () => {
+          TWEEN.update();
+          clearTimeout( t );
+        }, Math.max( 0, frameDelay ) );
 
-          // reflow and trigger update (when next "frame")
-          const frameDelay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
-          const t = setTimeout( () => {
-            TWEEN.update();
-            clearTimeout( t );
-          }, Math.max( 0, frameDelay ) );
-
-        }
 
       // CSS implementation
       } else {
@@ -404,20 +395,12 @@ export default class MtSvgLines extends React.Component {
 
 
   /*
-   * Return a unique classKey string
-   */
-  _getUniqueClassKey() {
-    return `mt-${ shortUID() }`;
-  }
-
-
-  /*
    * Check if animate flag is new, and if true, set a new classKey into state (trigger anim)
    */
   _setClassKey( animate ) {
     if ( animate !== this._lastAnimate ) {
       this._lastAnimate = animate;
-      this.setState( { classKey: this._getUniqueClassKey() } );
+      this.setState( { classKey: `mt-${ shortUID() }` } );
     }
   }
 }
