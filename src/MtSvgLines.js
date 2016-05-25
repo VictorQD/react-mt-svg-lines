@@ -298,10 +298,11 @@ export default class MtSvgLines extends React.Component {
     const pathData = { from: {}, to: {} };
 
     [].forEach.call( pathElems, ( pathEl, i ) => {
-      const isSkipAttr   = this._hasSkipAttr( pathEl.attributes );
-      const pathLengh    = trimFloat( pathEl.getTotalLength() );
-      pathData.to[ i ]   = isSkipAttr ? pathLengh : 0;
-      pathData.from[ i ] = pathLengh;
+      if ( !this._hasSkipAttr( pathEl.attributes ) ) {
+        const pathLengh  = trimFloat( pathEl.getTotalLength() );
+        pathData.to[ i ]   = 0;
+        pathData.from[ i ] = pathLengh;
+      }
     });
 
     return pathData;
@@ -332,7 +333,7 @@ export default class MtSvgLines extends React.Component {
    */
   _setStrokeDasharray( pathElems, pathData ) {
     [].forEach.call( pathElems, ( pathEl, i ) => {
-      pathEl.style.strokeDasharray = pathData[ i ];
+      if ( pathData[ i ] ) { pathEl.style.strokeDasharray = pathData[ i ]; }
     });
   }
 
@@ -342,7 +343,7 @@ export default class MtSvgLines extends React.Component {
    */
   _setStrokeDashoffset( pathElems, pathData ) {
     [].forEach.call( pathElems, ( pathEl, i ) => {
-      pathEl.style.strokeDashoffset = pathData[ i ];
+      if ( pathData[ i ] ) { pathEl.style.strokeDashoffset = pathData[ i ]; }
     });
   }
 
