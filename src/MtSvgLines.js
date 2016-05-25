@@ -89,16 +89,17 @@ export default class MtSvgLines extends React.Component {
   }
 
 
-
   render() {
     // destruct all component-specific props, so '...rest' can be applied to wrapper <span>
     const { className, animate, duration, stagger, timing, playback, fade, jsOnly, children, ...rest } = this.props;
     const { classKey, css } = this.state;
+    const isHidden = animate === 'hide';
 
     return (
       <span
         ref={ ( c ) => this._svgWrapper = c }
         className={ `${ className } ${ classKey }` }
+        style={ { opacity: isHidden ? 0.01 : 1 } }
         { ...rest }
       >
         { !jsOnly && <style>{ css }</style> }
@@ -195,32 +196,26 @@ export default class MtSvgLines extends React.Component {
 
         let css ='';
 
-        if ( animate === 'hide' ) {
-          css=`.${ classKey } { opacity: 0; }`;     // if 'hide' passed, set the entire container as ~trasparent
+        // 1) determine number of path elems in svg
+        const pathLenghts = this._getPathLengths();
+        const pathQty     = pathLenghts.length || 1;
 
-        } else {
-          // otherwise, animate away..
-          // 1) determine number of path elems in svg
-          const pathLenghts = this._getPathLengths();
-          const pathQty     = pathLenghts.length || 1;
+        // 2) calc all timing values
+        const startDelay       = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
+        const staggerMult      = clamp( stagger, 0, 100 ) / 100;              // convert percentage to 0-1
+        const pathStaggerDelay = ( stagger > 0 ? duration/pathQty * staggerMult : 0 );
+        const pathDrawDuration = ( stagger > 0 ? duration/pathQty * ( 2 - staggerMult ) : duration );
 
-          // 2) calc all timing values
-          const startDelay       = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-          const staggerMult      = clamp( stagger, 0, 100 ) / 100;              // convert percentage to 0-1
-          const pathStaggerDelay = ( stagger > 0 ? duration/pathQty * staggerMult : 0 );
-          const pathDrawDuration = ( stagger > 0 ? duration/pathQty * ( 2 - staggerMult ) : duration );
+        // 3) concat generated CSS, one path at a time..
+        pathLenghts.forEach( ( length, index ) => {
+          css += this._getPathCSS( index, length, startDelay, pathStaggerDelay, pathDrawDuration );
+        });
 
-          // 3) concat generated CSS, one path at a time..
-          pathLenghts.forEach( ( length, index ) => {
-            css += this._getPathCSS( index, length, startDelay, pathStaggerDelay, pathDrawDuration );
-          });
-
-          // set up on-complete timer
-          const t = setTimeout( () => {
-            clearTimeout( t );
-            this._onAnimComplete();
-          }, startDelay + duration );
-        }
+        // set up on-complete timer
+        const t = setTimeout( () => {
+          clearTimeout( t );
+          this._onAnimComplete();
+        }, startDelay + duration );
 
         // set state (re-render)
         this.setState( { css } );
