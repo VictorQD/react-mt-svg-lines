@@ -13,7 +13,9 @@ A small React.js wrapper component that lets you trigger "animated lines" in you
 ### How it works
 The component wraps your SVG and animates the `stroke-dashoffset` property on every `path` element within. For a description of the technique, see [this article](https://css-tricks.com/svg-line-animation-works).
 
-The original implementation injects a `style` tag with a generated string of CSS to accomplish this. While such animation comes "free", it does not work on most IE/Edge browsers. As of `0.5.0`, the component will fall back to using [tween.js](https://www.npmjs.com/package/tween.js) when IE/Edge is detected. The JS mode doesn't respect 100% of the props, and it bulked up the package somewhat, but it makes for a bit more "production grade" solution.
+The original implementation injects a `style` tag with a generated string of CSS to accomplish this. While such animation comes "free", it does not work on nearly any IE/Edge browsers. As of `0.5.0`, the component will fall back to using [tween.js](https://www.npmjs.com/package/tween.js) when IE/Edge is detected.
+
+The JS mode doesn't interpret all prop permutations and it bulked up the package somewhat, but it makes for a more "production grade" solution.
 
 
 ### Installation
@@ -63,16 +65,16 @@ Callback function, executes when animation concludes.
 Desired duration of one full cycle of the entire animation, across all paths (ms). Default is `1000`.
 
 ##### `jsOnly: bool`
-Apply `tween.js` to drive animations using JavaScript regardless of browser. Default is `false` (browser sniffing, only on IE/Edge)
+Apply `tween.js` to drive animations using JavaScript regardless of browser. Default is `false` (browser sniffing, only on IE/Edge).
 
 ##### `fade: bool`
 Apply a *fade-in* transition to each path. If a path has a `fill` color, the entire element will fade in while the line is drawn. Default is `false` *(not supported in JS mode)*
 
 ##### `playback: string`
-Any additional valid CSS [`animation`](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) shorthand props, specifically `iteration-count || direction || fill-mode || play-state`. Default is `"forwards"` (play once and stop), but feel free to experiment. For example, the spinner example is set to `"2 alternate-reverse both"`. *(partially supported in JS mode)*
+Any additional valid CSS [`animation`](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) shorthand props, specifically `iteration-count || direction || fill-mode || play-state`. Default is `"forwards"` (play once and stop), but feel free to experiment. For example, the spinner example is set to `"2 alternate-reverse both"`. *(partially supported in JS mode, respects `forwards`, `iteration-count`, `alternate` direction )*
 
 ##### `stagger: number (0-100)`
-Delay between the start times of each path (when multiple paths are present within the SVG). Default is `0`. The math there is simple, so if you have many staggered paths, you may need to tweak your `duration`. *(not supported in JS mode)*
+Delay between the start times of each path (when multiple paths are present within the SVG). Default is `0`. *(not supported in JS mode)*
 
 ##### `timing: string`
 Desired CSS "timing function" type: `"ease" || "ease-in" || "ease-out" || "ease-in-out" || "linear" || "step-start" || "step-end"`. Default is `"ease"`.

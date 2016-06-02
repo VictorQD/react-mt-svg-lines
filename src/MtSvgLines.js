@@ -51,7 +51,7 @@ export default class MtSvgLines extends React.Component {
     timing:    'ease',
     playback:  'forwards',
     fade:      false,
-    callback:  () => { console.log( 'done!' ) },
+    callback:  () => {},
     jsOnly:    false
   };
 
@@ -103,7 +103,6 @@ export default class MtSvgLines extends React.Component {
         { ...rest }
       >
         { !jsOnly && <style>{ css }</style> }
-
         { children }
       </span>
     );
@@ -132,39 +131,33 @@ export default class MtSvgLines extends React.Component {
     const isStartNewAnim = animate && classKey !== this._lastClassKey;
     const isAnimJS       = isMsBrowser() || jsOnly;
 
-    // START NEW ANIMATION...
+    // STARTING NEW ANIMATION...
     if ( isStartNewAnim ) {
-      console.log( 'start anim!' );
 
       // set flags
-      this._animStart   = Date.now();
+      this._animStart    = Date.now();
       this._lastClassKey = classKey;
 
-      // JS implementation
+      // parse for repeats
+      let numOfRepeats = parseInt( playback, 10 ) || 0;
+
+      /* ----- JS implementation ----- */
       if ( isAnimJS ) {
-        console.log( 'JS anim start!' );
 
         // parse props for use with Tween.js
         const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-        const isReverse  = playback.includes( 'reverse' );
-        const isYoYo     = playback.includes( 'alternate-reverse' ) && playback.includes( 'both' );
-        let numOfRepeats = parseInt( playback, 10 ) || 0;
 
         if ( numOfRepeats > 0 ) { numOfRepeats = numOfRepeats - 1; }
         if ( playback.includes( 'infinite' ) ) { numOfRepeats = Infinity; }
+        const isYoYo = playback.includes( 'alternate' );
 
         // acquire path elems and generate to/from data sets
-        this._pathElems = this._selectPathElems();
-        const pathData  = this._getPathData( this._pathElems );
+        this._pathElems    = this._selectPathElems();
+        const pathData     = this._getPathData( this._pathElems );
+        this._pathDataFrom = pathData.from;
+        this._pathDataTo   = pathData.to;
 
-        if ( isReverse && !isYoYo ) {
-          this._pathDataFrom = pathData.to;
-          this._pathDataTo   = pathData.from;
-
-        } else {
-          this._pathDataFrom = pathData.from;
-          this._pathDataTo   = pathData.to;
-        }
+        // TODO: if ( playback.includes( 'reverse' ) ) { ... };
 
         // init tweener object
         this._tweenData = { ...this._pathDataFrom };
@@ -178,22 +171,19 @@ export default class MtSvgLines extends React.Component {
           .to( this._pathDataTo, duration )
           .easing( EASING[ timing ] )
           .repeat( numOfRepeats )
+          .yoyo( isYoYo )
           .onUpdate( this._onTweenUpdate )
           .onComplete( this._onAnimComplete );
 
-        if ( isYoYo ) { tween.yoyo( true ); }
-
         // kick off JS tweening..
         const t = setTimeout( () => {
-          tween.start()
+          tween.start();
           TWEEN.update();
           clearTimeout( t );
         }, Math.max( 0, startDelay ) );
 
-
-      // CSS implementation
+      /* ----- CSS implementation ----- */
       } else {
-        console.log( 'CSS anim start!' );
 
         let css ='';
 
@@ -202,10 +192,10 @@ export default class MtSvgLines extends React.Component {
         const pathQty     = pathLenghts.length || 1;
 
         // 2) calc all timing values
-        const startDelay       = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-        const staggerMult      = clamp( stagger, 0, 100 ) / 100;              // convert percentage to 0-1
+        const startDelay       = typeof animate === 'number' ? animate : 0;             // if numeric, treat as delay (ms)
+        const staggerMult      = clamp( stagger, 0, 100 ) / 100;                        // convert percentage to 0-1
         const pathStaggerDelay = ( stagger > 0 ? duration/pathQty * staggerMult : 0 );
-        const pathDrawDuration = ( stagger > 0 ? duration/pathQty * ( 2 - staggerMult ) : duration );
+        const pathDrawDuration = ( stagger > 0 ? duration - (( pathStaggerDelay * ( pathQty - 1 ) ) * ( 2 - staggerMult )) : duration );
 
         // 3) concat generated CSS, one path at a time..
         pathLenghts.forEach( ( length, index ) => {
@@ -216,19 +206,18 @@ export default class MtSvgLines extends React.Component {
         const t = setTimeout( () => {
           clearTimeout( t );
           this._onAnimComplete();
-        }, startDelay + duration );
+        }, startDelay + duration * ( numOfRepeats ) );
 
         // set state (re-render)
         this.setState( { css } );
       }
 
 
-    // CONTINUING ANIMATION...
+    // ONGOING ANIMATION...
     } else if ( this._animStart ) {
 
-      // JS implementation
+      /* ----- JS implementation ----- */
       if ( isAnimJS ) {
-        console.log( 'JS anim cont...' );
 
         // apply tweened dash-offsets to all paths
         this._setStrokeDashoffset( this._pathElems, this._tweenData );
@@ -240,11 +229,9 @@ export default class MtSvgLines extends React.Component {
           clearTimeout( t );
         }, Math.max( 0, frameDelay ) );
 
-
-      // CSS implementation
+      /* ----- CSS implementation ----- */
       } else {
-        console.log( 'CSS anim cont...' );
-
+        // NOTE: nothing to do, browser does its thing...
       }
     }
   }
@@ -266,6 +253,7 @@ export default class MtSvgLines extends React.Component {
    * When animation completes, run callback (if any), clear start timestamp
    */
   _onAnimComplete = () => {
+    // console.log( 'completed in:', Date.now() - this._animStart );
     this.props.callback();
     this._animStart = 0;
   }

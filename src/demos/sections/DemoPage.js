@@ -1,7 +1,7 @@
 import React from 'react';
 
 import MtSvgLines from '../../MtSvgLines';
-// import MtSvgLines from './../../dist/';
+// import MtSvgLines from './../../dist/';  // NOTE: uncomment to test built lib
 
 import SvgCheckmark from '../components/SvgCheckmark';
 import SvgSignature from '../components/SvgSignature';
@@ -18,7 +18,7 @@ export default class DemoPage extends React.Component {
       triggerChartAnim:     true,
       triggerSpinnerAnim:   true,
 
-      triggerCheckAnimJS:   true,
+      triggerCheckAnimJS:   false,
       triggerSigAnimJS:     false,
       triggerChartAnimJS:   false,
       triggerSpinnerAnimJS: false
@@ -35,12 +35,14 @@ export default class DemoPage extends React.Component {
       triggerCheckAnimJS,
       triggerSigAnimJS,
       triggerChartAnimJS,
-      triggerSpinnerAnimJS,
+      triggerSpinnerAnimJS
     } = this.state;
 
     return (
       <div style={ styles.wrapper }>
-        <span style={ styles.gitHub }><a href="https://github.com/moarwick/react-mt-svg-lines">GitHub &raquo;</a></span>
+        <a href="https://github.com/moarwick/react-mt-svg-lines" style={ styles.gitHubLink }>
+          { this._renderGithubLogo() }
+        </a>
         <h2 style={ styles.title }>MtSvgLines</h2>
 
         {/* ----- CSS MODE ----- */}
@@ -201,7 +203,7 @@ export default class DemoPage extends React.Component {
   }
 
   // button partial
-  _renderTrigger( triggerProp, label="animate »" ) {
+  _renderTrigger( triggerProp, label='animate »' ) {
     return (
       <a style={ styles.link }
         href="#"
@@ -210,6 +212,20 @@ export default class DemoPage extends React.Component {
       >
         { label }
       </a>
+    );
+  }
+
+  _renderGithubLogo() {
+    return (
+      <svg viewBox="0 0 54 54" width="32">
+        <path fill="#888" d="M26.9,1.9c-13.8,0-25,11.5-25,25.6c0,11.3,7.2,20.9,17.1,24.3
+          c1.3,0.2,1.7-0.6,1.7-1.2c0-0.6,0-2.2,0-4.4c-7,1.5-8.4-3.4-8.4-3.4c-1.1-3-2.8-3.7-2.8-3.7c-2.3-1.6,0.2-1.6,0.2-1.6
+          c2.5,0.2,3.8,2.6,3.8,2.6c2.2,3.9,5.9,2.8,7.3,2.1c0.2-1.7,0.9-2.8,1.6-3.4C16.8,38.2,11,36,11,26.2c0-2.8,1-5.1,2.6-6.9
+          c-0.3-0.6-1.1-3.3,0.2-6.8c0,0,2.1-0.7,6.9,2.6c2-0.6,4.1-0.9,6.3-0.9c2.1,0,4.3,0.3,6.3,0.9c4.8-3.3,6.9-2.6,6.9-2.6
+          c1.4,3.5,0.5,6.1,0.2,6.8c1.6,1.8,2.6,4.1,2.6,6.9c0,9.8-5.8,12-11.4,12.6c0.9,0.8,1.7,2.4,1.7,4.7c0,3.4,0,6.2,0,7
+          c0,0.7,0.5,1.5,1.7,1.2c9.9-3.4,17.1-13,17.1-24.3C51.9,13.3,40.8,1.9,26.9,1.9z"
+        />
+      </svg>
     );
   }
 
@@ -229,7 +245,7 @@ const styles = {
     maxWidth: '800px',
     margin:   '30px auto 0 auto'
   },
-  gitHub: {
+  gitHubLink: {
     float: 'right'
   },
   title: {
@@ -240,7 +256,7 @@ const styles = {
     borderBottom:  '1px dotted #888'
   },
   row: {
-    clear: "both"
+    clear: 'both'
   },
   column: {
     width:     '25%',
