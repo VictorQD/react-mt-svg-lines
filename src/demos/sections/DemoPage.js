@@ -8,22 +8,67 @@ import SvgSignature from '../components/SvgSignature';
 import SvgChart from '../components/SvgChart';
 import SvgSpinner from '../components/SvgSpinner';
 
+
 export default class DemoPage extends React.Component {
+
   constructor( props ) {
     super( props );
 
     this.state = {
-      triggerCheckAnim:     true,
-      triggerSigAnim:       true,
-      triggerChartAnim:     true,
-      triggerSpinnerAnim:   true,
+      triggerCheckAnim:     1,
+      triggerSigAnim:       1000,
+      triggerChartAnim:     3000,
+      triggerSpinnerAnim:   6000,
 
       triggerCheckAnimJS:   false,
       triggerSigAnimJS:     false,
       triggerChartAnimJS:   false,
-      triggerSpinnerAnimJS: false
+      triggerSpinnerAnimJS: false,
+
+      columnHeight:         0,
+      shortColumnHeight:    0
     };
   }
+
+
+  componentDidMount() {
+    window.addEventListener( 'resize', this._handleColumnHeights, false );
+
+    setTimeout( () => {
+      this._handleColumnHeights();
+    }, 1 );
+  }
+
+
+  componentWillUnmount() {
+    window.removeEventListener( 'resize', this._handleColumnHeights, false );
+  }
+
+
+  _handleColumnHeights() {
+    if ( this._el ) {
+      setTimeout( () => {
+        this._setMaxHeights();
+      }, 1 );
+    }
+  }
+
+  _setMaxHeights() {
+    const columns        = this._el.querySelectorAll( '.column' );
+    const shortColumns   = this._el.querySelectorAll( '.column-short' );
+    const heights        = Array.prototype.map.call( columns, ( el ) => el.offsetHeight );
+    const shortHeights   = Array.prototype.map.call( shortColumns, ( el ) => el.offsetHeight );
+    const maxHeight      = Math.max( ...heights );
+    const maxShortHeight = Math.max( ...shortHeights );
+
+    if ( maxHeight && maxShortHeight ) {
+      this.setState({
+        columnHeight:      maxHeight,
+        shortColumnHeight: maxShortHeight
+      });
+    }
+  }
+
 
   render() {
     const {
@@ -31,15 +76,21 @@ export default class DemoPage extends React.Component {
       triggerSigAnim,
       triggerChartAnim,
       triggerSpinnerAnim,
-
       triggerCheckAnimJS,
       triggerSigAnimJS,
       triggerChartAnimJS,
-      triggerSpinnerAnimJS
+      triggerSpinnerAnimJS,
+      columnHeight,
+      shortColumnHeight
     } = this.state;
 
+    const dynStyles = {
+      column:      columnHeight      ? { ...styles.column, minHeight: columnHeight }      : styles.column,
+      shortColumn: shortColumnHeight ? { ...styles.column, minHeight: shortColumnHeight } : styles.shortColumn
+    };
+
     return (
-      <div style={ styles.wrapper }>
+      <div ref={ c => this._el = c } style={ styles.wrapper }>
         <a href="https://github.com/moarwick/react-mt-svg-lines" style={ styles.gitHubLink }>
           { this._renderGithubLogo() }
         </a>
@@ -48,7 +99,7 @@ export default class DemoPage extends React.Component {
         {/* ----- CSS MODE ----- */}
 
         <div style={ styles.row }>
-          <div style={ styles.column }>
+          <div className="column" style={ dynStyles.column }>
             <MtSvgLines
               animate={ triggerCheckAnim }
             >
@@ -68,7 +119,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div style={ styles.column }>
+          <div className="column" style={ dynStyles.column }>
             <MtSvgLines
               animate={ triggerSigAnim }
               duration={ 2000 }
@@ -88,10 +139,10 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div style={ styles.column }>
+          <div className="column" style={ dynStyles.column }>
             <MtSvgLines
               animate={ triggerChartAnim }
-              duration={ 4000 }
+              duration={ 3000 }
               stagger={ 50 }
               timing="ease-in"
               fade={ true }
@@ -102,7 +153,7 @@ export default class DemoPage extends React.Component {
             <div style={ styles.info }>
               { this._renderTrigger( 'triggerChartAnim' ) }
               <p style={ styles.props }>
-                duration: <strong>4000</strong><br/>
+                duration: <strong>3000</strong><br/>
                 stagger:  <strong>50</strong><br/>
                 timing:   <strong>ease-in</strong><br/>
                 fade:     <strong>true</strong><br/>
@@ -111,7 +162,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div style={ styles.column }>
+          <div className="column" style={ dynStyles.column }>
             <MtSvgLines
               animate={ triggerSpinnerAnim }
               duration={ 1500 }
@@ -137,7 +188,7 @@ export default class DemoPage extends React.Component {
         {/* ----- JS MODE ----- */}
 
         <div style={ styles.row }>
-          <div style={ styles.column }>
+          <div className="column-short" style={ dynStyles.shortColumn }>
             <MtSvgLines
               animate={ triggerCheckAnimJS }
               jsOnly={ true }
@@ -149,7 +200,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div style={ styles.column }>
+          <div className="column-short" style={ dynStyles.shortColumn }>
             <MtSvgLines
               animate={ triggerSigAnimJS }
               duration={ 2000 }
@@ -164,7 +215,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div style={ styles.column }>
+          <div className="column-short" style={ dynStyles.shortColumn }>
             <MtSvgLines
               animate={ triggerChartAnimJS }
               duration={ 4000 }
@@ -180,7 +231,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div style={ styles.column }>
+          <div className="column-short" style={ dynStyles.shortColumn }>
             <MtSvgLines
               animate={ triggerSpinnerAnimJS }
               duration={ 1500 }
@@ -229,7 +280,7 @@ export default class DemoPage extends React.Component {
     );
   }
 
-  // when any "animate &raquo;" link is clicked, set the corresponding 'animate' prop to trigger it
+  // when any 'animate' link is clicked, set the corresponding 'animate' prop to trigger it
   _handleAnimateClick = ( e ) => {
     e.preventDefault();
 
@@ -250,13 +301,13 @@ const styles = {
   },
   title: {
     width:         '100%',
-    paddingBottom: '10px',
     color:         '#888',
-    fontWeight:    '200',
-    borderBottom:  '1px dotted #888'
+    fontWeight:    200
   },
   row: {
-    clear: 'both'
+    clear:     'both',
+    borderTop: '1px dotted #888',
+    paddingTop: 20
   },
   column: {
     width:     '25%',
@@ -270,7 +321,7 @@ const styles = {
     padding:        '0 3px 2px',
     color:          '#E52029',
     border:         '1px solid #E52029',
-    borderRadius:   '3px'
+    borderRadius:   3
   },
   props: {
     fontSize: '12px',

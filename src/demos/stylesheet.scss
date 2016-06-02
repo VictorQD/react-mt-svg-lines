@@ -2,5 +2,11 @@
 
 body {
   font: 300 normal 16px 'Lato', sans-serif;
-  background-color: #EFF;
+  background-color: #FFF;
+}
+
+.column, .column-short {
+  @media ( max-width: 380px ) {
+    width: 50% !important;
+  }
 }
