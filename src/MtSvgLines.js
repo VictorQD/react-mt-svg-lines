@@ -138,15 +138,14 @@ export default class MtSvgLines extends React.Component {
       this._animStart    = Date.now();
       this._lastClassKey = classKey;
 
-      // parse for repeats
+      // parse out vars common for both modes
+      const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
       let numOfRepeats = parseInt( playback, 10 ) || 0;
 
-      /* ----- JS implementation ----- */
+      /* ----- JS MODE ----- */
       if ( isAnimJS ) {
 
         // parse props for use with Tween.js
-        const startDelay = typeof animate === 'number' ? animate : 0;   // if numeric, treat as delay (ms)
-
         if ( numOfRepeats > 0 ) { numOfRepeats = numOfRepeats - 1; }
         if ( playback.includes( 'infinite' ) ) { numOfRepeats = Infinity; }
         const isYoYo = playback.includes( 'alternate' );
@@ -182,7 +181,7 @@ export default class MtSvgLines extends React.Component {
           clearTimeout( t );
         }, Math.max( 0, startDelay ) );
 
-      /* ----- CSS implementation ----- */
+      /* ----- CSS MODE ----- */
       } else {
 
         let css ='';
@@ -192,7 +191,6 @@ export default class MtSvgLines extends React.Component {
         const pathQty     = pathLenghts.length || 1;
 
         // 2) calc all timing values
-        const startDelay       = typeof animate === 'number' ? animate : 0;             // if numeric, treat as delay (ms)
         const staggerMult      = clamp( stagger, 0, 100 ) / 100;                        // convert percentage to 0-1
         const pathStaggerDelay = ( stagger > 0 ? duration/pathQty * staggerMult : 0 );
         const pathDrawDuration = ( stagger > 0 ? duration - (( pathStaggerDelay * ( pathQty - 1 ) ) * ( 2 - staggerMult )) : duration );
@@ -216,7 +214,7 @@ export default class MtSvgLines extends React.Component {
     // ONGOING ANIMATION...
     } else if ( this._animStart ) {
 
-      /* ----- JS implementation ----- */
+      /* ----- JS MODE ----- */
       if ( isAnimJS ) {
 
         // apply tweened dash-offsets to all paths
@@ -229,7 +227,7 @@ export default class MtSvgLines extends React.Component {
           clearTimeout( t );
         }, Math.max( 0, frameDelay ) );
 
-      /* ----- CSS implementation ----- */
+      /* ----- CSS MODE ----- */
       } else {
         // NOTE: nothing to do, browser does its thing...
       }

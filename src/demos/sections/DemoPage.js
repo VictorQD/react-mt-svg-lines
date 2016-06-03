@@ -15,7 +15,7 @@ export default class DemoPage extends React.Component {
     super( props );
 
     this.state = {
-      triggerCheckAnim:     1,
+      triggerCheckAnim:     0,
       triggerSigAnim:       1000,
       triggerChartAnim:     3000,
       triggerSpinnerAnim:   6000,
@@ -23,37 +23,21 @@ export default class DemoPage extends React.Component {
       triggerCheckAnimJS:   false,
       triggerSigAnimJS:     false,
       triggerChartAnimJS:   false,
-      triggerSpinnerAnimJS: false,
-
-      columnHeight:         0,
-      shortColumnHeight:    0
+      triggerSpinnerAnimJS: false
     };
   }
 
 
   componentDidMount() {
-    window.addEventListener( 'resize', this._handleColumnHeights, false );
-
-    setTimeout( () => {
-      this._handleColumnHeights();
-    }, 1 );
-  }
-
-
-  componentWillUnmount() {
-    window.removeEventListener( 'resize', this._handleColumnHeights, false );
-  }
-
-
-  _handleColumnHeights() {
     if ( this._el ) {
       setTimeout( () => {
-        this._setMaxHeights();
+        this._equalizeColumnHeights();
       }, 1 );
     }
   }
 
-  _setMaxHeights() {
+
+  _equalizeColumnHeights() {
     const columns        = this._el.querySelectorAll( '.column' );
     const shortColumns   = this._el.querySelectorAll( '.column-short' );
     const heights        = Array.prototype.map.call( columns, ( el ) => el.offsetHeight );
@@ -61,12 +45,8 @@ export default class DemoPage extends React.Component {
     const maxHeight      = Math.max( ...heights );
     const maxShortHeight = Math.max( ...shortHeights );
 
-    if ( maxHeight && maxShortHeight ) {
-      this.setState({
-        columnHeight:      maxHeight,
-        shortColumnHeight: maxShortHeight
-      });
-    }
+    Array.prototype.forEach.call( columns, ( el ) => el.style.height = maxHeight + 'px' );
+    Array.prototype.forEach.call( shortColumns, ( el ) => el.style.height = maxShortHeight + 'px' );
   }
 
 
@@ -79,15 +59,8 @@ export default class DemoPage extends React.Component {
       triggerCheckAnimJS,
       triggerSigAnimJS,
       triggerChartAnimJS,
-      triggerSpinnerAnimJS,
-      columnHeight,
-      shortColumnHeight
+      triggerSpinnerAnimJS
     } = this.state;
-
-    const dynStyles = {
-      column:      columnHeight      ? { ...styles.column, minHeight: columnHeight }      : styles.column,
-      shortColumn: shortColumnHeight ? { ...styles.column, minHeight: shortColumnHeight } : styles.shortColumn
-    };
 
     return (
       <div ref={ c => this._el = c } style={ styles.wrapper }>
@@ -99,7 +72,7 @@ export default class DemoPage extends React.Component {
         {/* ----- CSS MODE ----- */}
 
         <div style={ styles.row }>
-          <div className="column" style={ dynStyles.column }>
+          <div className="column" style={ styles.column }>
             <MtSvgLines
               animate={ triggerCheckAnim }
             >
@@ -119,7 +92,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div className="column" style={ dynStyles.column }>
+          <div className="column" style={ styles.column }>
             <MtSvgLines
               animate={ triggerSigAnim }
               duration={ 2000 }
@@ -139,7 +112,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div className="column" style={ dynStyles.column }>
+          <div className="column" style={ styles.column }>
             <MtSvgLines
               animate={ triggerChartAnim }
               duration={ 3000 }
@@ -162,7 +135,7 @@ export default class DemoPage extends React.Component {
             </div>
           </div>
 
-          <div className="column" style={ dynStyles.column }>
+          <div className="column" style={ styles.column }>
             <MtSvgLines
               animate={ triggerSpinnerAnim }
               duration={ 1500 }
@@ -188,7 +161,7 @@ export default class DemoPage extends React.Component {
         {/* ----- JS MODE ----- */}
 
         <div style={ styles.row }>
-          <div className="column-short" style={ dynStyles.shortColumn }>
+          <div className="column-short" style={ { ...styles.column, ...styles.shortColumn } }>
             <MtSvgLines
               animate={ triggerCheckAnimJS }
               jsOnly={ true }
@@ -196,11 +169,11 @@ export default class DemoPage extends React.Component {
               <SvgCheckmark />
             </MtSvgLines>
             <div style={ styles.info }>
-              { this._renderTrigger( 'triggerCheckAnimJS', 'JS fallback »' ) }
+              { this._renderTrigger( 'triggerCheckAnimJS', 'JS mode »' ) }
             </div>
           </div>
 
-          <div className="column-short" style={ dynStyles.shortColumn }>
+          <div className="column-short" style={ { ...styles.column, ...styles.shortColumn } }>
             <MtSvgLines
               animate={ triggerSigAnimJS }
               duration={ 2000 }
@@ -211,11 +184,11 @@ export default class DemoPage extends React.Component {
               <SvgSignature />
             </MtSvgLines>
             <div style={ styles.info }>
-              { this._renderTrigger( 'triggerSigAnimJS', 'JS fallback »' ) }
+              { this._renderTrigger( 'triggerSigAnimJS', 'JS mode »' ) }
             </div>
           </div>
 
-          <div className="column-short" style={ dynStyles.shortColumn }>
+          <div className="column-short" style={ { ...styles.column, ...styles.shortColumn } }>
             <MtSvgLines
               animate={ triggerChartAnimJS }
               duration={ 4000 }
@@ -227,11 +200,11 @@ export default class DemoPage extends React.Component {
               <SvgChart />
             </MtSvgLines>
             <div style={ styles.info }>
-              { this._renderTrigger( 'triggerChartAnimJS', 'JS fallback »' ) }
+              { this._renderTrigger( 'triggerChartAnimJS', 'JS mode »' ) }
             </div>
           </div>
 
-          <div className="column-short" style={ dynStyles.shortColumn }>
+          <div className="column-short" style={ { ...styles.column, ...styles.shortColumn } }>
             <MtSvgLines
               animate={ triggerSpinnerAnimJS }
               duration={ 1500 }
@@ -243,7 +216,7 @@ export default class DemoPage extends React.Component {
               <SvgSpinner />
             </MtSvgLines>
             <div style={ styles.info }>
-              { this._renderTrigger( 'triggerSpinnerAnimJS', 'JS fallback »' ) }
+              { this._renderTrigger( 'triggerSpinnerAnimJS', 'JS mode »' ) }
             </div>
           </div>
 
@@ -256,7 +229,7 @@ export default class DemoPage extends React.Component {
   // button partial
   _renderTrigger( triggerProp, label='animate »' ) {
     return (
-      <a style={ styles.link }
+      <a style={ styles.animateLink }
         href="#"
         data-trigger={ triggerProp }
         onClick={ this._handleAnimateClick }
@@ -294,7 +267,7 @@ export default class DemoPage extends React.Component {
 const styles = {
   wrapper: {
     maxWidth: '800px',
-    margin:   '30px auto 0 auto'
+    margin:   '20px auto 0 auto'
   },
   gitHubLink: {
     float: 'right'
@@ -313,10 +286,13 @@ const styles = {
     width:     '25%',
     float:     'left'
   },
+  shortColumn: {
+    paddingBottom: 15
+  },
   info: {
     padding: '10px 0 0 4%'
   },
-  link: {
+  animateLink: {
     textDecoration: 'none',
     padding:        '0 3px 2px',
     color:          '#E52029',
