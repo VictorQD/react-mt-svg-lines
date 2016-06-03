@@ -1,7 +1,7 @@
 import React from 'react';
 
 import MtSvgLines from '../../MtSvgLines';
-// import MtSvgLines from './../../dist/';  // NOTE: uncomment to test built lib
+// import MtSvgLines from '../../../dist/';  // NOTE: uncomment to test built lib
 
 import SvgCheckmark from '../components/SvgCheckmark';
 import SvgSignature from '../components/SvgSignature';
@@ -273,9 +273,9 @@ const styles = {
     float: 'right'
   },
   title: {
-    width:         '100%',
-    color:         '#888',
-    fontWeight:    200
+    width:      '100%',
+    color:      '#888',
+    fontWeight: 200
   },
   row: {
     clear:     'both',
@@ -283,8 +283,8 @@ const styles = {
     paddingTop: 20
   },
   column: {
-    width:     '25%',
-    float:     'left'
+    width: '25%',
+    float: 'left'
   },
   shortColumn: {
     paddingBottom: 15

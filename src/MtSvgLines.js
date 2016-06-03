@@ -128,7 +128,7 @@ export default class MtSvgLines extends React.Component {
     const { animate, duration, stagger, timing, playback, jsOnly }  = this.props;
     const { classKey } = this.state;
 
-    const isStartNewAnim = animate && classKey !== this._lastClassKey;
+    const isStartNewAnim = animate !== false && classKey !== this._lastClassKey;
     const isAnimJS       = isMsBrowser() || jsOnly;
 
     // STARTING NEW ANIMATION...
@@ -179,7 +179,7 @@ export default class MtSvgLines extends React.Component {
           tween.start();
           TWEEN.update();
           clearTimeout( t );
-        }, Math.max( 0, startDelay ) );
+        }, Math.max( 1, startDelay ) );
 
       /* ----- CSS MODE ----- */
       } else {
