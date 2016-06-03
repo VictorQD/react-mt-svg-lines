@@ -1,7 +1,7 @@
 import React, { PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
 
-import { shortUID, clamp, trimFloat, isMsBrowser } from './utils.js';
+import { shortUID, clamp, trimFloat, isMsBrowser, contains } from './utils.js';
 import TWEEN from 'tween.js';
 
 const EASING = {
@@ -147,8 +147,8 @@ export default class MtSvgLines extends React.Component {
 
         // parse props for use with Tween.js
         if ( numOfRepeats > 0 ) { numOfRepeats = numOfRepeats - 1; }
-        if ( playback.includes( 'infinite' ) ) { numOfRepeats = Infinity; }
-        const isYoYo = playback.includes( 'alternate' );
+        if ( contains( playback, 'infinite' ) ) { numOfRepeats = Infinity; }
+        const isYoYo = contains( playback, 'alternate' );
 
         // acquire path elems and generate to/from data sets
         this._pathElems    = this._selectPathElems();
@@ -156,7 +156,7 @@ export default class MtSvgLines extends React.Component {
         this._pathDataFrom = pathData.from;
         this._pathDataTo   = pathData.to;
 
-        // TODO: if ( playback.includes( 'reverse' ) ) { ... };
+        // TODO: if ( contains( playback, 'reverse' ) ) { ... };
 
         // init tweener object
         this._tweenData = { ...this._pathDataFrom };

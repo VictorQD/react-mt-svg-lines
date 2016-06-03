@@ -28,3 +28,11 @@ export function shortUID() {
 export function isMsBrowser() {
   return Boolean( document.documentMode || /Edge/.test( navigator.userAgent ) );
 }
+
+
+/*
+ * Determine if value is present in array (or string), return bool
+ */
+export function contains( arrayOrString, value  ) {
+  return arrayOrString.indexOf( value ) > -1;
+}
