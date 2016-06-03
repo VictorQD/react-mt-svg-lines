@@ -257,7 +257,7 @@ export default class DemoPage extends React.Component {
   _handleAnimateClick = ( e ) => {
     e.preventDefault();
 
-    const triggerKey = e.target.dataset.trigger;    // determine which clicked from its data attr
+    const triggerKey = e.target.dataset.trigger;    // determine which clicked from its data attr (NOTE: IE problem!)
     const triggerVal = String( Date.now() );        // generate a unique string to pass to 'animate'
 
     this.setState( { [ triggerKey ]: triggerVal } );
