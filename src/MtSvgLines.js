@@ -216,16 +216,7 @@ export default class MtSvgLines extends React.Component {
 
       /* ----- JS MODE ----- */
       if ( isAnimJS ) {
-
-        // apply tweened dash-offsets to all paths
-        this._setStrokeDashoffset( this._pathElems, this._tweenData );
-
-        // reflow and trigger update (when next "frame")
-        const frameDelay = MS_PER_UPDATE - ( Date.now() - this._tweenLast );
-        const t = setTimeout( () => {
-          TWEEN.update();
-          clearTimeout( t );
-        }, Math.max( 0, frameDelay ) );
+        requestAnimationFrame( TWEEN.update );
 
       /* ----- CSS MODE ----- */
       } else {
@@ -243,6 +234,9 @@ export default class MtSvgLines extends React.Component {
     const tweenElapsed  = this._getTweenElapsed();
     const tweenProgress = Math.ceil( tweenElapsed / ( duration || 1 ) * 100 );
     this._tweenLast     = Date.now();
+
+    this._setStrokeDashoffset( this._pathElems, this._tweenData );
+
     this.setState({ tweenElapsed, tweenProgress });
   }
 
